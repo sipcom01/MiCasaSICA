@@ -1,0 +1,51 @@
+# ═══════════════════════════════════════════════════════════════
+# SICA Construcciones - Configuración de Apache (.htaccess)
+# ═══════════════════════════════════════════════════════════════
+#
+# Este archivo controla el comportamiento del servidor Apache para
+# el sitio público de SICA. Sus funciones principales:
+#
+#   1. Seguridad: evita listado de directorios, bloquea acceso a
+#      archivos de base de datos (.db, .sqlite) y a la carpeta includes/
+#   2. Rendimiento: caché del navegador para assets estáticos (CSS, JS, imágenes)
+#      y compresión GZIP para reducir el tamaño de las respuestas
+#   3. Navegación: define index.php como página principal por defecto
+
+# Evitar listado de directorios (seguridad: no mostrar estructura de archivos)
+Options -Indexes
+
+# Página principal por defecto al acceder a una carpeta
+DirectoryIndex index.php
+
+# Redirigir errores 404 a la página principal (opcional, actualmente comentado)
+# ErrorDocument 404 /index.php
+
+# ─── PROTECCIÓN DE ARCHIVOS SENSIBLES ─────────────────────────
+# Bloquea el acceso directo a archivos de base de datos, logs y configuraciones
+<FilesMatch "\.(db|sqlite|sql|env|log)$">
+    Require all denied
+</FilesMatch>
+
+# ─── PROTECCIÓN DE INCLUDES ───────────────────────────────────
+# Bloquea el acceso directo a archivos PHP internos (solo accesibles vía require)
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^includes/ - [F,L]
+</IfModule>
+
+# ─── CACHÉ DEL NAVEGADOR PARA ASSETS ──────────────────────────
+# Los archivos estáticos se cachean por 1 mes para mejorar velocidad de carga
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType text/javascript "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+</IfModule>
+
+# ─── COMPRESIÓN GZIP ──────────────────────────────────────────
+# Reduce el tamaño de las respuestas HTML, CSS y JS para transferencia más rápida
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json
+</IfModule>

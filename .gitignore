@@ -1,0 +1,6 @@
+# SICA - Git Ignore
+data/
+admin/uploads/
+.DS_Store
+*.log
+.ftp-config

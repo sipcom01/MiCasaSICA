@@ -1,0 +1,25 @@
+{
+    "deploy": {
+        "host": {
+            "ssh": "ssh -p 65002 u557645733@193.42.137.76",
+            "remote_path": "/home/u557645733/domains/micasasica.com/public_html",
+            "local_path": "public_html",
+            "exclude": [
+                "data/",
+                "admin/uploads/",
+                ".git/",
+                ".deepcode/",
+                ".DS_Store"
+            ]
+        },
+        "auto_upload": true
+    },
+    "git": {
+        "remote": "origin",
+        "branch": "main",
+        "repo": "https://github.com/sipcom01/MiCasaSICA.git"
+    },
+    "notifications": {
+        "enabled": false
+    }
+}
