@@ -16,6 +16,7 @@ define('SICA_APP', true);
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/includes/mailer.php';
 
 $db = Database::getInstance();
 $db->initTables();
@@ -28,17 +29,51 @@ if (Auth::isLoggedIn()) {
 }
 
 $error = '';
+$forgotMsg = '';
+$forgotSent = false;
+$showForgot = isset($_GET['forgot']);
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
-    
-    if (empty($username) || empty($password)) {
-        $error = 'Por favor completa todos los campos.';
-    } elseif (Auth::login($username, $password)) {
-        header('Location: ' . ADMIN_URL);
-        exit;
+    if (isset($_POST['forgot_password'])) {
+        // Flujo "Olvidé mi contraseña"
+        $email = trim($_POST['forgot_email'] ?? '');
+        if (empty($email)) {
+            $forgotMsg = 'Por favor ingresa tu correo electrónico.';
+            $showForgot = true;
+        } else {
+            $pdo = $db->getPdo();
+            $stmt = $pdo->prepare("SELECT id, nombre, correo FROM usuarios WHERE (correo = :e OR username = :e2) AND activo = 1");
+            $stmt->execute(['e' => $email, 'e2' => $email]);
+            $u = $stmt->fetch();
+            if ($u && !empty($u['correo'])) {
+                try {
+                    $token = generarToken();
+                    $tokenExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                    $pdo->prepare("UPDATE usuarios SET reset_token=:tok, reset_token_expires=:texp WHERE id=:id")
+                       ->execute(['tok'=>$token, 'texp'=>$tokenExpires, 'id'=>$u['id']]);
+                    require_once __DIR__ . '/../vendor/autoload.php';
+                    enviarResetPassword($u['correo'], $u['nombre'], $token);
+                } catch (\Exception $e) {
+                    // Si el envío falla, no revelamos el error al usuario
+                }
+            }
+            // Siempre mostramos éxito para no revelar si el correo existe
+            $forgotSent = true;
+            $forgotMsg = 'Si tu correo está registrado, recibirás un enlace para restablecer tu contraseña.';
+        }
     } else {
-        $error = 'Usuario o contraseña incorrectos.';
+        // Login normal
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+        
+        if (empty($username) || empty($password)) {
+            $error = 'Por favor completa todos los campos.';
+        } elseif (Auth::login($username, $password)) {
+            header('Location: ' . ADMIN_URL);
+            exit;
+        } else {
+            $error = 'Usuario o contraseña incorrectos.';
+        }
     }
 }
 ?>
@@ -88,8 +123,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-login:hover { background: #6FD9D7; }
         
         .error-msg { background: rgba(239,68,68,0.15); color: #fca5a5; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.5rem; border: 1px solid rgba(239,68,68,0.3); }
+        .success-msg { background: rgba(80,200,198,0.12); color: #6FD9D7; padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.85rem; margin-bottom: 1.5rem; border: 1px solid rgba(80,200,198,0.25); text-align: center; }
         .back-link { display: block; text-align: center; color: #94a3b8; font-size: 0.85rem; margin-top: 1.5rem; text-decoration: none; }
         .back-link:hover { color: var(--teal); }
+        .forgot-link { display: block; text-align: center; color: #94a3b8; font-size: 0.8rem; margin-top: 1rem; cursor: pointer; background: none; border: none; width: 100%; font-family: inherit; }
+        .forgot-link:hover { color: var(--teal); text-decoration: underline; }
+        #forgotForm { display: <?= $showForgot ? 'block' : 'none' ?>; }
+        #loginForm { display: <?= $showForgot ? 'none' : 'block' ?>; }
     </style>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 36 44%27%3E%3Crect x=%271.5%27 y=%271.5%27 width=%2733%27 height=%2741%27 rx=%272%27 fill=%27none%27 stroke=%27%2350C8C6%27 stroke-width=%272.5%27/%3E%3Crect x=%278%27 y=%2724%27 width=%277%27 height=%2714%27 fill=%27%23FFFFFF%27/%3E%3Crect x=%2721%27 y=%2712%27 width=%277%27 height=%2726%27 fill=%27%23FFFFFF%27/%3E%3C/svg%3E">
 </head>
@@ -103,7 +143,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($error): ?>
         <div class="error-msg"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
+        <?php if ($forgotMsg): ?>
+        <div class="<?= $forgotSent ? 'success-msg' : 'error-msg' ?>"><?= htmlspecialchars($forgotMsg) ?></div>
+        <?php endif; ?>
         
+        <!-- Login Form -->
+        <div id="loginForm">
         <form method="POST" action="">
             <div class="form-group">
                 <label for="username">Correo Institucional</label>
@@ -118,6 +163,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <button type="submit" class="btn-login">Iniciar Sesión</button>
         </form>
+        <button class="forgot-link" onclick="showForgot()">¿Olvidaste tu contraseña?</button>
+        </div>
+
+        <!-- Forgot Password Form -->
+        <div id="forgotForm">
+        <form method="POST" action="">
+            <input type="hidden" name="forgot_password" value="1">
+            <p style="color:#cbd5e1;font-size:0.9rem;text-align:center;margin-bottom:1.5rem">Ingresa tu correo institucional y te enviaremos un enlace para restablecer tu contraseña.</p>
+            <div class="form-group">
+                <label for="forgot_email">Correo electrónico</label>
+                <input type="email" id="forgot_email" name="forgot_email" placeholder="tu@micasasica.com" required autofocus>
+            </div>
+            <button type="submit" class="btn-login">Enviar Enlace</button>
+        </form>
+        <button class="forgot-link" onclick="showLogin()">← Volver al inicio de sesión</button>
+        </div>
         
         <a href="/" class="back-link">← Volver al sitio principal</a>
     </div>
@@ -132,6 +193,16 @@ function togglePassword() {
         pwd.type = 'password'; 
         icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
     }
+}
+function showForgot() {
+    document.getElementById('loginForm').style.display = 'none';
+    document.getElementById('forgotForm').style.display = 'block';
+    document.getElementById('forgot_email').focus();
+}
+function showLogin() {
+    document.getElementById('forgotForm').style.display = 'none';
+    document.getElementById('loginForm').style.display = 'block';
+    document.getElementById('username').focus();
 }
 </script>
 </body>

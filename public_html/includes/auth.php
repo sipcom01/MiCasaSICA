@@ -51,8 +51,9 @@ class Auth {
      */
     public static function login($username, $password) {
         $db = Database::getInstance()->getPdo();
-        $stmt = $db->prepare("SELECT * FROM usuarios WHERE username = :u AND activo = 1");
-        $stmt->execute(['u' => $username]);
+        // Buscar por username O por correo (para nuevos usuarios username = correo)
+        $stmt = $db->prepare("SELECT * FROM usuarios WHERE (username = :u OR correo = :u2) AND activo = 1");
+        $stmt->execute(['u' => $username, 'u2' => $username]);
         $user = $stmt->fetch();
         
         if ($user && password_verify($password, $user['password_hash'])) {

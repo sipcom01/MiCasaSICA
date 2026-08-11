@@ -17,6 +17,7 @@ define('SICA_APP', true);
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/includes/mailer.php';
 Auth::requireLogin();
 $user = Auth::currentUser();
 $db = Database::getInstance()->getPdo();
@@ -24,22 +25,61 @@ $db = Database::getInstance()->getPdo();
 // Solo admin y director pueden gestionar usuarios
 if(!in_array($user['rol'],['admin','director'])){header('Location: index.php');exit;}
 
+// Inicializar mensaje de feedback
+$feedback = '';
+
 // ─── PROCESAR FORMULARIOS POST ────────────────────────────────
 if($_SERVER['REQUEST_METHOD']==='POST'){
     if(isset($_POST['add_user'])){
-        // Crear nuevo usuario con contraseña hasheada (bcrypt)
-        $hash = password_hash($_POST['password'], PASSWORD_BCRYPT);
-        $db->prepare("INSERT INTO usuarios (username, password_hash, nombre, correo, telefono, rol) VALUES (:u,:p,:n,:c,:t,:r)")
-           ->execute(['u'=>$_POST['username'],'p'=>$hash,'n'=>$_POST['nombre'],'c'=>$_POST['correo']?:null,'t'=>$_POST['telefono']?:null,'r'=>$_POST['rol']]);
+        // Nuevo usuario: username = correo, contraseña temporal aleatoria
+        // Se envía email de invitación para que establezca su contraseña
+        $correo = trim($_POST['correo'] ?? '');
+        if(empty($correo)){ $feedback = '<div class="msg msg-e">El correo electrónico es obligatorio.</div>'; }
+        else {
+            try {
+                $token = generarToken();
+                $tokenExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                $hashTemp = password_hash(bin2hex(random_bytes(16)), PASSWORD_BCRYPT);
+                $db->prepare("INSERT INTO usuarios (username, password_hash, nombre, correo, telefono, rol, reset_token, reset_token_expires) VALUES (:u,:p,:n,:c,:t,:r,:tok,:texp)")
+                   ->execute([
+                       'u'=>$correo, 'p'=>$hashTemp, 'n'=>$_POST['nombre'],
+                       'c'=>$correo, 't'=>$_POST['telefono']?:null, 'r'=>$_POST['rol'],
+                       'tok'=>$token, 'texp'=>$tokenExpires
+                   ]);
+                require_once __DIR__ . '/../vendor/autoload.php';
+                enviarInvitacion($correo, $_POST['nombre'], $token);
+                $feedback = '<div class="msg msg-s">Usuario creado. Se ha enviado invitación a <strong>'.htmlspecialchars($correo).'</strong> para establecer contraseña.</div>';
+            } catch (\Exception $e) {
+                if(strpos($e->getMessage(),'UNIQUE')!==false){
+                    $feedback = '<div class="msg msg-e">Ya existe un usuario con ese correo electrónico.</div>';
+                } else {
+                    $feedback = '<div class="msg msg-w">Usuario creado pero el envío de invitación falló: '.htmlspecialchars($e->getMessage()).'</div>';
+                }
+            }
+        }
     } elseif(isset($_POST['edit_user'])){
-        // Editar usuario existente (solo actualiza contraseña si se proporciona una nueva)
+        // Editar usuario (nombre, correo, teléfono, rol — sin contraseña)
         $data=['id'=>(int)$_POST['id'],'nombre'=>$_POST['nombre'],'correo'=>$_POST['correo']?:null,'telefono'=>$_POST['telefono']?:null,'rol'=>$_POST['rol']];
         $set = "nombre=:nombre, correo=:correo, telefono=:telefono, rol=:rol";
-        if(!empty($_POST['password'])){
-            $data['p'] = password_hash($_POST['password'], PASSWORD_BCRYPT);
-            $set .= ", password_hash=:p";
-        }
         $db->prepare("UPDATE usuarios SET $set WHERE id=:id")->execute($data);
+        $feedback = '<div class="msg msg-s">Usuario actualizado.</div>';
+    } elseif(isset($_POST['reenviar_invitacion'])){
+        // Reenviar email de invitación
+        $uid = (int)$_POST['id'];
+        $uu = $db->prepare("SELECT nombre, correo FROM usuarios WHERE id=:id"); $uu->execute(['id'=>$uid]); $dest = $uu->fetch();
+        if($dest && !empty($dest['correo'])){
+            try {
+                $token = generarToken();
+                $tokenExpires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                $db->prepare("UPDATE usuarios SET reset_token=:tok, reset_token_expires=:texp WHERE id=:id")
+                   ->execute(['tok'=>$token,'texp'=>$tokenExpires,'id'=>$uid]);
+                require_once __DIR__ . '/../vendor/autoload.php';
+                enviarInvitacion($dest['correo'], $dest['nombre'], $token);
+                $feedback = '<div class="msg msg-s">Invitación reenviada a <strong>'.htmlspecialchars($dest['correo']).'</strong>.</div>';
+            } catch (\Exception $e) {
+                $feedback = '<div class="msg msg-e">Error al reenviar: '.htmlspecialchars($e->getMessage()).'</div>';
+            }
+        }
     } elseif(isset($_POST['toggle_active'])){
         // Activar/desactivar usuario (toggle booleano)
         $u = $db->prepare("SELECT activo FROM usuarios WHERE id=:id"); $u->execute(['id'=>(int)$_POST['id']]); $uu = $u->fetch();
@@ -70,7 +110,7 @@ foreach($ass as $a){ $asignaciones[$a['usuario_id']][$a['proyecto_id']] = $a['pe
 $roles = ['director'=>'Director General','lider'=>'Líder de Proyecto','gestor'=>'Gestor de Trámites','arquitecto'=>'Arquitecto','ingeniero'=>'Ingeniero','abogado'=>'Abogado','finanzas'=>'Finanzas','colaborador'=>'Colaborador'];
 ?>
 <!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Usuarios | SICA</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 44'%3E%3Crect x='1.5' y='1.5' width='33' height='41' rx='2' fill='none' stroke='%2350C8C6' stroke-width='2.5'/%3E%3Crect x='8' y='24' width='7' height='14' fill='%2350C8C6'/%3E%3Crect x='21' y='12' width='7' height='26' fill='%2350C8C6'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 44'%3E%3Crect x='1.5' y='1.5' width='33' height='41' rx='2' fill='none' stroke='%2350C8C6' stroke-width='2.5'/%3E%3Crect x='8' y='24' width='7' height='14' fill='%23FFFFFF'/%3E%3Crect x='21' y='12' width='7' height='26' fill='%23FFFFFF'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/admin.css?v=4"><style>
 .pg{background:#fff;border-radius:12px;padding:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);margin-bottom:1.5rem}
 .pg h3{font-size:1rem;margin-bottom:1rem;color:#132236}
@@ -85,11 +125,16 @@ $roles = ['director'=>'Director General','lider'=>'Líder de Proyecto','gestor'=
 .bg-g{background:#dcfce7;color:#166534}.bg-r{background:#fee2e2;color:#991b1b}.bg-b{background:#dbeafe;color:#1e40af}
 .modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center}
 .modal.show{display:flex}.modal-box{background:#fff;border-radius:12px;padding:2rem;width:90%;max-width:500px}
+.msg{padding:0.75rem 1rem;border-radius:8px;font-size:0.85rem;margin-bottom:1rem}
+.msg-s{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+.msg-e{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.msg-w{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
 </style></head><body><div class="admin-layout">
 <!-- Sidebar admin -->
 <?php $activePage="usuarios"; include __DIR__."/includes/sidebar.php"; ?>
 <!-- Contenido principal -->
 <main class="admin-main"><a href="index.php" style="color:#64748b;font-size:0.9rem">← Proyectos</a><div class="admin-header"><h2>👥 Gestión de Usuarios</h2></div>
+<?php if($feedback) echo $feedback; ?>
 
 <!-- Formulario para crear nuevo usuario -->
 <div class="pg">
@@ -98,12 +143,11 @@ $roles = ['director'=>'Director General','lider'=>'Líder de Proyecto','gestor'=
 <input type="hidden" name="add_user" value="1">
 <div class="fg">
 <div><label>Nombre completo</label><input type="text" name="nombre" required></div>
-<div><label>Correo electrónico</label><input type="email" name="correo"></div>
+<div><label>Correo electrónico *</label><input type="email" name="correo" required placeholder="usuario@micasasica.com"></div>
 <div><label>Teléfono</label><input type="text" name="telefono"></div>
-<div><label>Usuario (username)</label><input type="text" name="username" required></div>
-<div><label>Contraseña</label><input type="password" name="password" required></div>
 <div><label>Rol</label><select name="rol" required><?php foreach($roles as $k=>$v):?><option value="<?=$k?>"><?=$v?></option><?php endforeach?></select></div>
 </div>
+<p style="font-size:0.8rem;color:#64748b;margin-bottom:1rem">Se enviará un correo de invitación para que el usuario establezca su contraseña.</p>
 <button type="submit" class="btn btn-p">➕ Crear Usuario</button>
 </form>
 </div>
@@ -137,10 +181,14 @@ $roles = ['director'=>'Director General','lider'=>'Líder de Proyecto','gestor'=
 <div><label>Nombre completo</label><input type="text" name="nombre" id="editNombre" required></div>
 <div><label>Correo electrónico</label><input type="email" name="correo" id="editCorreo"></div>
 <div><label>Teléfono</label><input type="text" name="telefono" id="editTelefono"></div>
-<div><label>Nueva contraseña (dejar vacío = sin cambio)</label><input type="password" name="password"></div>
 <div><label>Rol</label><select name="rol" id="editRol"><?php foreach($roles as $k=>$v):?><option value="<?=$k?>"><?=$v?></option><?php endforeach?></select></div>
 </div>
-<div style="display:flex;gap:0.5rem"><button type="submit" class="btn btn-p">💾 Guardar</button><button type="button" class="btn btn-s" onclick="document.getElementById('editModal').classList.remove('show')">Cancelar</button></div>
+<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem"><button type="submit" class="btn btn-p">💾 Guardar</button><button type="button" class="btn btn-s" onclick="document.getElementById('editModal').classList.remove('show')">Cancelar</button></div>
+</form>
+<form method="POST" style="border-top:1px solid #e2e8f0;padding-top:0.75rem">
+<input type="hidden" name="reenviar_invitacion" value="1"><input type="hidden" name="id" id="reenviarId">
+<p style="font-size:0.8rem;color:#64748b;margin-bottom:0.5rem">¿El usuario no recibió la invitación? Reenvía el correo para establecer contraseña.</p>
+<button type="submit" class="btn btn-s" style="width:100%">📧 Reenviar Invitación</button>
 </form>
 </div></div>
 
@@ -192,6 +240,7 @@ function assignProjects(uid, nombre){
 // Rellena el modal de edición
 function editUser(id, nombre, correo, telefono, rol){
     document.getElementById('editId').value=id;
+    document.getElementById('reenviarId').value=id;
     document.getElementById('editNombre').value=nombre;
     document.getElementById('editCorreo').value=correo||'';
     document.getElementById('editTelefono').value=telefono||'';
