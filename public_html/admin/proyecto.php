@@ -92,7 +92,7 @@ foreach($categorias as &$cat){
 $totales['prog'] = $totales['count']>0 ? round($totales['prog']/$totales['count']) : 0;
 ?>
 <!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title><?=htmlspecialchars($proyecto['nombre'])?> | Gantt</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 44'%3E%3Crect x='1.5' y='1.5' width='33' height='41' rx='2' fill='none' stroke='%2350C8C6' stroke-width='2.5'/%3E%3Crect x='8' y='24' width='7' height='14' fill='%2350C8C6'/%3E%3Crect x='21' y='12' width='7' height='26' fill='%2350C8C6'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 44'%3E%3Crect x='1.5' y='1.5' width='33' height='41' rx='2' fill='none' stroke='%2350C8C6' stroke-width='2.5'/%3E%3Crect x='8' y='24' width='7' height='14' fill='%23FFFFFF'/%3E%3Crect x='21' y='12' width='7' height='26' fill='%23FFFFFF'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/admin.css?v=40">
 <style>
 /* --- CORRECCIÓN DE SCROLL GLOBAL --- */

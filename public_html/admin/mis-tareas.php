@@ -40,6 +40,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+    // Finalizar sin cargar entregable: el responsable solicita el cierre con una descripción
+    if (isset($_POST['action']) && $_POST['action'] === 'solicitar_cierre') {
+        $pid = (int)$_POST['partida_id'];
+        $desc = trim($_POST['cierre_descripcion'] ?? '');
+        if ($desc !== '') {
+            $db->prepare("UPDATE presupuesto_partidas SET cierre_solicitado=1, cierre_solicitado_por=:u, cierre_fecha_solicitud=datetime('now'), cierre_descripcion=:d, cierre_estado='pendiente' WHERE id=:id")
+               ->execute(['u'=>$uid, 'd'=>$desc, 'id'=>$pid]);
+            $db->prepare("INSERT INTO tarea_historial (partida_id, usuario_id, accion, detalle) VALUES (:p,:u,:a,:d)")
+               ->execute(['p'=>$pid,'u'=>$uid,'a'=>'solicitud_cierre','d'=>$desc]);
+            $msg = 'Solicitud de cierre enviada. Queda pendiente de validación por el líder del proyecto.';
+        }
+    }
+    // Validación del cierre sin entregable (solo líder, director o admin)
+    if (isset($_POST['action']) && $_POST['action'] === 'validar_cierre') {
+        if (in_array($user['rol'], ['lider','director','admin'])) {
+            $pid = (int)$_POST['partida_id'];
+            $decision = $_POST['decision'] ?? '';
+            if ($decision === 'aprobar') {
+                $db->prepare("UPDATE presupuesto_partidas SET completado=1, progreso=100, fecha_terminacion_real=DATE('now'), cierre_estado='aprobado', cierre_validado_por=:u, cierre_fecha_validacion=datetime('now') WHERE id=:id")
+                   ->execute(['u'=>$uid,'id'=>$pid]);
+                $db->prepare("INSERT INTO tarea_historial (partida_id, usuario_id, accion, detalle) VALUES (:p,:u,:a,:d)")
+                   ->execute(['p'=>$pid,'u'=>$uid,'a'=>'cierre_aprobado','d'=>'Cierre sin entregable validado por el líder']);
+                $msg = 'Tarea cerrada correctamente.';
+            } elseif ($decision === 'rechazar') {
+                $db->prepare("UPDATE presupuesto_partidas SET cierre_estado='rechazado', cierre_solicitado=0, cierre_validado_por=:u, cierre_fecha_validacion=datetime('now') WHERE id=:id")
+                   ->execute(['u'=>$uid,'id'=>$pid]);
+                $db->prepare("INSERT INTO tarea_historial (partida_id, usuario_id, accion, detalle) VALUES (:p,:u,:a,:d)")
+                   ->execute(['p'=>$pid,'u'=>$uid,'a'=>'cierre_rechazado','d'=>'Cierre sin entregable rechazado']);
+                $msg = 'Solicitud de cierre rechazada.';
+            }
+        }
+    }
 }
 
 $tareas = $db->prepare("SELECT pp.*, pc.nombre as etapa, pj.nombre as proyecto, pj.id as proyecto_id FROM presupuesto_partidas pp JOIN presupuesto_categorias pc ON pp.categoria_id=pc.id JOIN proyectos pj ON pc.proyecto_id=pj.id WHERE pp.responsable=:n AND pp.completado=0 ORDER BY pp.fecha_fin ASC");
@@ -47,6 +79,13 @@ $tareas->execute(['n'=>$user['nombre']]); $tareas = $tareas->fetchAll();
 
 $tareasCompletadas = $db->prepare("SELECT pp.*, pc.nombre as etapa, pj.nombre as proyecto FROM presupuesto_partidas pp JOIN presupuesto_categorias pc ON pp.categoria_id=pc.id JOIN proyectos pj ON pc.proyecto_id=pj.id WHERE pp.responsable=:n AND pp.completado=1 ORDER BY pp.fecha_terminacion_real DESC LIMIT 10");
 $tareasCompletadas->execute(['n'=>$user['nombre']]); $tareasCompletadas = $tareasCompletadas->fetchAll();
+
+// Solicitudes de cierre sin entregable pendientes de validar (visible para líder, director y admin)
+$validaciones = [];
+if (in_array($user['rol'], ['lider','director','admin'])) {
+    $vq = $db->prepare("SELECT pp.*, pc.nombre as etapa, pj.nombre as proyecto, pj.id as proyecto_id, us.nombre as solicitante FROM presupuesto_partidas pp JOIN presupuesto_categorias pc ON pp.categoria_id=pc.id JOIN proyectos pj ON pc.proyecto_id=pj.id LEFT JOIN usuarios us ON us.id=pp.cierre_solicitado_por WHERE pp.cierre_estado='pendiente' ORDER BY pp.cierre_fecha_solicitud ASC");
+    $vq->execute(); $validaciones = $vq->fetchAll();
+}
 ?><!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Mis Tareas | SICA</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 44'%3E%3Crect x='1.5' y='1.5' width='33' height='41' rx='2' fill='none' stroke='%2350C8C6' stroke-width='2.5'/%3E%3Crect x='8' y='24' width='7' height='14' fill='%23FFFFFF'/%3E%3Crect x='21' y='12' width='7' height='26' fill='%23FFFFFF'/%3E%3C/svg%3E">
 <style>
@@ -131,9 +170,33 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 <div class="tc-actions">
 <button class="btn" onclick="openGanttModal(<?=htmlspecialchars(json_encode($t))?>)">📅 Gantt</button>
 <button class="btn" onclick="openPresupuestoModal(<?=htmlspecialchars(json_encode($t))?>)">💰 Presupuesto</button>
+<?php if ($t['cierre_estado'] === 'pendiente'): ?>
+<span class="tc-badge badge-pend">⏳ Cierre solicitado — pendiente de validación</span>
+<?php else: ?>
+<button class="btn" onclick="openCierreModal(<?=$t['id']?>,'<?=htmlspecialchars($t['procedimiento'],ENT_QUOTES)?>')">✅ Finalizar sin cargar</button>
 <button class="btn btn-p" onclick="openUploadModal(<?=$t['id']?>,'<?=htmlspecialchars($t['procedimiento'],ENT_QUOTES)?>')">📎 Subir y Completar</button>
+<?php endif; ?>
+<?php if ($t['cierre_estado'] === 'rechazado'): ?>
+<span class="tc-badge badge-late">Cierre rechazado — puedes reintentar</span>
+<?php endif; ?>
 </div></div>
 <?php endforeach?>
+<?php if(!empty($validaciones)):?>
+<div class="section-title">🛡️ Validar cierres sin entregable</div>
+<?php foreach($validaciones as $v):?>
+<div class="task-card" style="border-left-color:#f59e0b">
+<div class="tc-header"><div>
+<div class="tc-name"><?=htmlspecialchars($v['procedimiento'])?></div>
+<div class="tc-meta">📍 <?=htmlspecialchars($v['proyecto'])?> · <?=htmlspecialchars($v['etapa'])?></div>
+<div class="tc-meta">👤 Solicitó: <?=htmlspecialchars($v['solicitante']??'—')?> · <?=htmlspecialchars($v['cierre_fecha_solicitud']??'')?></div>
+<div class="tc-meta" style="white-space:normal;line-height:1.5">📝 <?=nl2br(htmlspecialchars($v['cierre_descripcion']??''))?></div>
+</div></div>
+<div class="tc-actions">
+<form method="POST" style="display:inline"><input type="hidden" name="action" value="validar_cierre"><input type="hidden" name="partida_id" value="<?=$v['id']?>"><input type="hidden" name="decision" value="aprobar"><button type="submit" class="btn btn-p">✔ Aprobar y cerrar</button></form>
+<form method="POST" style="display:inline"><input type="hidden" name="action" value="validar_cierre"><input type="hidden" name="partida_id" value="<?=$v['id']?>"><input type="hidden" name="decision" value="rechazar"><button type="submit" class="btn btn-d">✖ Rechazar</button></form>
+</div>
+</div>
+<?php endforeach;endif?>
 <?php if(!empty($tareasCompletadas)):?><div class="section-title">✅ Completadas</div>
 <?php foreach($tareasCompletadas as $t):?><div class="task-card done"><div class="tc-header"><div><div class="tc-name"><?=htmlspecialchars($t['procedimiento'])?></div><div class="tc-meta">📍 <?=htmlspecialchars($t['proyecto'])?> · Terminado: <?=$t['fecha_terminacion_real']?date('d/m/Y',strtotime($t['fecha_terminacion_real'])):'Sí'?></div></div><span class="tc-badge badge-ok">OK</span></div></div>
 <?php endforeach;endif?></div>
@@ -170,6 +233,18 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 <div class="warn-box" id="analysisPending" style="display:none">⏳ Analizando con IA...</div>
 <div class="btn-row"><button type="button" class="btn" onclick="document.getElementById('uploadModal').classList.remove('show')">Cancelar</button><button type="button" class="btn" onclick="analyzeDocument()">🤖 Analizar con IA</button><button type="submit" class="btn btn-p" id="btnCompletar" disabled>📎 Subir</button></div></form></div></div>
 
+<!-- MODAL FINALIZAR SIN CARGAR -->
+<div class="modal" id="cierreModal" onclick="if(event.target===this)this.classList.remove('show')"><div class="modal-box" onclick="event.stopPropagation()">
+<h3>✅ Finalizar sin cargar</h3>
+<form method="POST" onsubmit="return confirm('¿Enviar solicitud de cierre? El líder del proyecto deberá validarla para que la tarea quede cerrada.')">
+<input type="hidden" name="action" value="solicitar_cierre"><input type="hidden" name="partida_id" id="cierrePid">
+<div class="info-box" id="cierreInfo"></div>
+<label>Descripción del motivo de cierre *</label>
+<textarea name="cierre_descripcion" id="cierreDesc" required placeholder="Ej: Trámite concluido sin documento entregable, se obtuvo visto bueno..."></textarea>
+<div class="btn-row"><button type="button" class="btn" onclick="document.getElementById('cierreModal').classList.remove('show')">Cancelar</button><button type="submit" class="btn btn-p">Enviar solicitud</button></div>
+</form>
+</div></div>
+
 <script>
 function toggleDark(){var b=document.body;var c=document.getElementById("darkSwitch");b.classList.toggle("dark",c.checked);localStorage.setItem("sica-dark",c.checked?"1":"0")}
 (function(){if(localStorage.getItem("sica-dark")==="1"){document.body.classList.add("dark");var c=document.getElementById("darkSwitch");if(c)c.checked=true}})();
@@ -177,6 +252,7 @@ function toggleDark(){var b=document.body;var c=document.getElementById("darkSwi
 function openGanttModal(t){document.getElementById('ganttPid').value=t.id;document.getElementById('ganttFI').value=t.fecha_inicio||'';document.getElementById('ganttFF').value=t.fecha_fin||'';document.getElementById('ganttInfo').innerHTML='<strong>'+esc(t.procedimiento)+'</strong><br>📍 '+esc(t.proyecto)+'<br>📅 Actual: '+(t.fecha_inicio||'?')+' → '+(t.fecha_fin||'?');document.getElementById('ganttModal').classList.add('show')}
 function openPresupuestoModal(t){document.getElementById('presPid').value=t.id;document.getElementById('presMonto').value=t.presupuesto_tercero||0;document.getElementById('presNota').value=t.nota_presupuesto||'';document.getElementById('presInfo').innerHTML='<strong>'+esc(t.procedimiento)+'</strong><br>📍 '+esc(t.proyecto)+'<br>💰 Estimado: $'+(t.costo_estimado||0)+' | Tercero: $'+(t.presupuesto_tercero||0);document.getElementById('presupuestoModal').classList.add('show')}
 function openUploadModal(id,nombre){document.getElementById('uploadPid').value=id;document.getElementById('uploadInfo').innerHTML='<strong>'+esc(nombre)+'</strong>';document.getElementById('uploadCompletar').value='0';document.getElementById('btnCompletar').disabled=true;document.getElementById('btnCompletar').textContent='📎 Subir';document.getElementById('analysisResult').style.display='none';document.getElementById('analysisPending').style.display='none';document.getElementById('uploadFile').value='';document.getElementById('uploadModal').classList.add('show')}
+function openCierreModal(id,nombre){document.getElementById('cierrePid').value=id;document.getElementById('cierreInfo').innerHTML='<strong>'+esc(nombre)+'</strong>';document.getElementById('cierreDesc').value='';document.getElementById('cierreModal').classList.add('show')}
 
 function analyzeDocument(){
 var file=document.getElementById('uploadFile').files[0];if(!file){alert('Selecciona un archivo');return}

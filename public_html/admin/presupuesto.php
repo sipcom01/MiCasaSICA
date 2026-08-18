@@ -109,7 +109,7 @@ function fmt($n){return '$ '.number_format($n,2);}
 function barColor($p){return $p>=100?'#22c55e':($p>0?'#3b82f6':'#e2e8f0');}
 ?>
 <!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title><?=$proyecto_id?htmlspecialchars($proyecto['nombre']).' | ':''?>Presupuesto | SICA</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 44'%3E%3Crect x='1.5' y='1.5' width='33' height='41' rx='2' fill='none' stroke='%2350C8C6' stroke-width='2.5'/%3E%3Crect x='8' y='24' width='7' height='14' fill='%2350C8C6'/%3E%3Crect x='21' y='12' width='7' height='26' fill='%2350C8C6'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 44'%3E%3Crect x='1.5' y='1.5' width='33' height='41' rx='2' fill='none' stroke='%2350C8C6' stroke-width='2.5'/%3E%3Crect x='8' y='24' width='7' height='14' fill='%23FFFFFF'/%3E%3Crect x='21' y='12' width='7' height='26' fill='%23FFFFFF'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="assets/css/admin.css?v=4"><style>
 .tbl{width:100%;border-collapse:collapse;font-size:0.8rem;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
 .tbl th{background:#132236;color:#fff;padding:0.5rem 0.4rem;font-weight:600;font-size:0.7rem;text-align:left;white-space:nowrap}

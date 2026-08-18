@@ -147,6 +147,13 @@ class Database {
         try { $this->pdo->exec("ALTER TABLE presupuesto_partidas ADD COLUMN nota_presupuesto TEXT"); } catch (\Exception $e) {}
         try { $this->pdo->exec("ALTER TABLE usuarios ADD COLUMN reset_token TEXT"); } catch (\Exception $e) {}
         try { $this->pdo->exec("ALTER TABLE usuarios ADD COLUMN reset_token_expires DATETIME"); } catch (\Exception $e) {}
+        try { $this->pdo->exec("ALTER TABLE presupuesto_partidas ADD COLUMN cierre_solicitado INTEGER DEFAULT 0"); } catch (\Exception $e) {}
+        try { $this->pdo->exec("ALTER TABLE presupuesto_partidas ADD COLUMN cierre_solicitado_por INTEGER"); } catch (\Exception $e) {}
+        try { $this->pdo->exec("ALTER TABLE presupuesto_partidas ADD COLUMN cierre_fecha_solicitud DATETIME"); } catch (\Exception $e) {}
+        try { $this->pdo->exec("ALTER TABLE presupuesto_partidas ADD COLUMN cierre_descripcion TEXT"); } catch (\Exception $e) {}
+        try { $this->pdo->exec("ALTER TABLE presupuesto_partidas ADD COLUMN cierre_estado TEXT"); } catch (\Exception $e) {}
+        try { $this->pdo->exec("ALTER TABLE presupuesto_partidas ADD COLUMN cierre_validado_por INTEGER"); } catch (\Exception $e) {}
+        try { $this->pdo->exec("ALTER TABLE presupuesto_partidas ADD COLUMN cierre_fecha_validacion DATETIME"); } catch (\Exception $e) {}
         // Tablas de historial y chat
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS tarea_historial (id INTEGER PRIMARY KEY AUTOINCREMENT, partida_id INTEGER NOT NULL, usuario_id INTEGER NOT NULL, accion TEXT NOT NULL, detalle TEXT, fecha DATETIME DEFAULT CURRENT_TIMESTAMP)");
         $this->pdo->exec("CREATE TABLE IF NOT EXISTS tarea_chat (id INTEGER PRIMARY KEY AUTOINCREMENT, partida_id INTEGER NOT NULL, usuario_id INTEGER NOT NULL, mensaje TEXT NOT NULL, rol TEXT DEFAULT 'user', fecha DATETIME DEFAULT CURRENT_TIMESTAMP)");
