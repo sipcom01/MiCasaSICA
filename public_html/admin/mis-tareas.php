@@ -104,7 +104,13 @@ h2{font-size:1.2rem;color:#132236;margin:0 0 1rem 0}.msg{padding:.6rem 1rem;bord
 .task-card.delayed{border-left-color:#ef4444}.task-card.done{border-left-color:#22c55e;opacity:.7}
 .tc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.5rem}
 .tc-name{font-weight:600;font-size:.9rem;color:#1e293b}.tc-meta{font-size:.75rem;color:#64748b;margin-top:.25rem}
-.tc-actions{display:flex;gap:.4rem;margin-top:.6rem;flex-wrap:wrap}
+.tc-actions{display:flex;flex-direction:column;gap:.4rem;margin-top:.6rem}
+.tc-actions .btn{width:100%;text-align:center}
+.tc-dates{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-top:.4rem}
+.tc-date{background:#f8fafc;border-radius:6px;padding:.4rem .5rem}
+.tc-date label{display:block;font-size:.6rem;color:#94a3b8;text-transform:uppercase;margin-bottom:.1rem}
+.tc-date span{font-size:.75rem;font-weight:600;color:#1e293b}
+.tc-date-full{grid-column:1/-1}
 .tc-badge{font-size:.65rem;padding:.15rem .5rem;border-radius:10px;font-weight:600;white-space:nowrap}
 .badge-pend{background:#fef3c7;color:#92400e}.badge-ok{background:#dcfce7;color:#166534}.badge-late{background:#fee2e2;color:#991b1b}
 .section-title{font-size:.85rem;font-weight:600;color:#94a3b8;margin:1.5rem 0 .75rem 0;text-transform:uppercase;letter-spacing:.5px}
@@ -138,6 +144,7 @@ h2{font-size:1.2rem;color:#132236;margin:0 0 1rem 0}.msg{padding:.6rem 1rem;bord
 .user-name{font-size:.85rem;font-weight:500}.user-logout{font-size:.7rem;color:#94a3b8;text-decoration:none}
 body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-chat{background:#1e293b}
 .dark .task-card{background:#1e293b}.dark .tc-name{color:#e2e8f0}.dark .tc-meta{color:#94a3b8}
+.dark .tc-date{background:#0f172a}.dark .tc-date span{color:#e2e8f0}
 .dark .btn{background:#334155;border-color:#475569;color:#e2e8f0}.dark .btn:hover{background:#475569}
 .dark .chat-messages{background:#0f172a}.dark .chat-msg.ai{background:#1e293b;color:#e2e8f0}
 .dark .chat-input-wrap{background:#1e293b;border-color:#334155}
@@ -168,7 +175,12 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 <?php if(empty($tareas)&&empty($tareasCompletadas)):?><p style="color:#94a3b8;text-align:center;padding:2rem">No tienes tareas asignadas.</p><?php endif?>
 <?php foreach($tareas as $t):$hoy=date('Y-m-d');$atrasada=$t['fecha_fin']&&$t['fecha_fin']<$hoy;?>
 <div class="task-card <?=$atrasada?'delayed':''?>">
-<div class="tc-header"><div><div class="tc-name"><?=htmlspecialchars($t['procedimiento'])?></div><div class="tc-meta">📍 <?=htmlspecialchars($t['proyecto'])?> · <?=htmlspecialchars($t['etapa'])?></div><div class="tc-meta">📅 <?=$t['fecha_inicio']?date('d/m/Y',strtotime($t['fecha_inicio'])):'-'?> → <?=$t['fecha_fin']?date('d/m/Y',strtotime($t['fecha_fin'])):'?'?> · <?=(int)$t['progreso']?>%</div></div><span class="tc-badge <?=$atrasada?'badge-late':($t['progreso']>0?'badge-pend':'badge-pend')?>"><?=$atrasada?'Atrasada':'Pendiente'?></span></div>
+<div class="tc-header"><div><div class="tc-name"><?=htmlspecialchars($t['procedimiento'])?></div><div class="tc-meta">📍 <?=htmlspecialchars($t['proyecto'])?> · <?=htmlspecialchars($t['etapa'])?></div></div><span class="tc-badge <?=$atrasada?'badge-late':'badge-pend'?>"><?=$atrasada?'Atrasada':'Pendiente'?></span></div>
+<div class="tc-dates">
+<div class="tc-date tc-date-full"><label>Inicio</label><span><?=$t['fecha_inicio']?date('d/m/Y',strtotime($t['fecha_inicio'])):'—'?></span></div>
+<div class="tc-date"><label>Fin</label><span><?=$t['fecha_fin']?date('d/m/Y',strtotime($t['fecha_fin'])):'—'?></span></div>
+<div class="tc-date"><label>Progreso</label><span><?=(int)$t['progreso']?>%</span></div>
+</div>
 <div class="tc-actions">
 <button class="btn" onclick="openGanttModal(<?=htmlspecialchars(json_encode($t))?>)">📅 Gantt</button>
 <button class="btn" onclick="openPresupuestoModal(<?=htmlspecialchars(json_encode($t))?>)">💰 Presupuesto</button>
