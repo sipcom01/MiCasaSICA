@@ -145,24 +145,12 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 .dark h2{color:#e2e8f0}.dark .section-title{color:#64748b}.dark .modal-box{background:#1e293b}
 .dark .modal-box h3{color:#e2e8f0}.dark .modal-box label{color:#94a3b8}
 .dark .modal-box input,.dark .modal-box select,.dark .modal-box textarea{background:#0f172a;color:#e2e8f0;border-color:#475569}
-.sidebar{transition:width .25s ease;overflow:visible}
-.sidebar.collapsed{width:68px}
-.sidebar-toggle{width:100%;background:transparent;border:none;color:#cbd5e1;font-size:1.25rem;padding:.85rem 0;cursor:pointer;text-align:center;border-bottom:1px solid rgba(255,255,255,.08);flex-shrink:0}
-.sidebar-toggle:hover{background:rgba(255,255,255,.06);color:#fff}
 .nav-item{position:relative}
 .nav-icon{font-size:1.15rem;flex-shrink:0;width:24px;text-align:center}
-.sidebar.collapsed .sidebar-brand{justify-content:center;padding:1.25rem 0}
-.sidebar.collapsed .brand-text,.sidebar.collapsed .nav-label,.sidebar.collapsed .user-name,.sidebar.collapsed .user-logout,.sidebar.collapsed .dark-switch-label{display:none}
-.sidebar.collapsed .nav-item{justify-content:center;padding:.75rem 0;gap:0}
-.sidebar.collapsed .sidebar-nav{padding:1rem .5rem}
-.sidebar.collapsed .user-info-wrap{justify-content:center;padding:1rem .5rem}
-.sidebar.collapsed .dark-switch-wrap{justify-content:center;padding:.5rem 0}
-.sidebar.collapsed .nav-item:hover::after{content:attr(data-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:#1b3050;color:#fff;padding:.4rem .8rem;border-radius:6px;font-size:.8rem;white-space:nowrap;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12)}
-@media(max-width:768px){.panel-tasks,.panel-chat{flex:1}.main{flex-direction:column}}
+@media(max-width:768px){.sidebar{width:68px}.sidebar .brand-text,.sidebar .nav-label,.sidebar .user-name,.sidebar .user-logout,.sidebar .dark-switch-label{display:none}.sidebar .sidebar-brand{justify-content:center;padding:1.25rem 0}.sidebar .nav-item{justify-content:center;padding:.75rem 0;gap:0}.sidebar .sidebar-nav{padding:1rem .5rem}.sidebar .user-info-wrap{justify-content:center;padding:1rem .5rem}.sidebar .dark-switch-wrap{justify-content:center;padding:.5rem 0}.sidebar .nav-item:hover::after{content:attr(data-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:#1b3050;color:#fff;padding:.4rem .8rem;border-radius:6px;font-size:.8rem;white-space:nowrap;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12)}.panel-tasks,.panel-chat{flex:1}.main{flex-direction:column}}
 </style></head><body>
 <div class="layout">
-<aside class="sidebar collapsed" id="adminSidebar">
-<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Alternar menú" title="Mostrar/ocultar menú">☰</button>
+<aside class="sidebar">
 <div class="sidebar-brand"><div class="brand-icon"><svg viewBox="0 0 36 44" width="30" height="37"><rect x="1.5" y="1.5" width="33" height="41" rx="2" fill="none" stroke="#50C8C6" stroke-width="2.5"/><rect x="8" y="24" width="7" height="14" fill="#FFFFFF"/><rect x="21" y="12" width="7" height="26" fill="#FFFFFF"/></svg></div><div class="brand-text"><div class="brand-name">SICA</div><div class="brand-sub">Panel Admin</div></div></div>
 <nav class="sidebar-nav">
 <a href="index.php" class="nav-item" data-label="Proyectos"><span class="nav-icon">📊</span><span class="nav-label">Proyectos</span></a>
@@ -260,8 +248,6 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 </div></div>
 
 <script>
-function toggleSidebar(){var s=document.getElementById('adminSidebar');if(!s)return;s.classList.toggle('collapsed');localStorage.setItem('sica-sidebar',s.classList.contains('collapsed')?'1':'0')}
-(function(){var s=document.getElementById('adminSidebar');if(!s)return;if(localStorage.getItem('sica-sidebar')==='0'){s.classList.remove('collapsed')}})();
 function toggleDark(){var b=document.body;var c=document.getElementById("darkSwitch");b.classList.toggle("dark",c.checked);localStorage.setItem("sica-dark",c.checked?"1":"0")}
 (function(){if(localStorage.getItem("sica-dark")==="1"){document.body.classList.add("dark");var c=document.getElementById("darkSwitch");if(c)c.checked=true}})();
 

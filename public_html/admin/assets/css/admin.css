@@ -187,14 +187,6 @@ tr:hover td { background: #f8fafc; }
 /* ---------- RESPONSIVE ---------- */
 @media (max-width: 1024px) {
     .stats-grid { grid-template-columns: repeat(2, 1fr); }
-    .admin-sidebar {
-        width: 100%; height: auto; position: relative;
-    }
-    .sidebar-nav { display: flex; overflow-x: auto; padding: 0.5rem; }
-    .nav-item { white-space: nowrap; }
-    .sidebar-footer { display: none; }
-    .admin-main { margin-left: 0; }
-    .admin-layout { flex-direction: column; }
 }
 @media (max-width: 640px) {
     .stats-grid { grid-template-columns: 1fr; }
@@ -252,48 +244,35 @@ body.dark .tbl th { background: #0f172a; }
 .dark-switch-label { font-size: 0.7rem; color: #94a3b8; }
 
 /* ============================================
-   SIDEBAR COLAPSABLE (solo iconos)
+   SIDEBAR RESPONSIVE (colapsa a iconos en móvil)
    ============================================ */
-:root { --sidebar-w-collapsed: 68px; }
-
-.admin-sidebar { transition: width 0.25s ease; overflow: visible; }
-.admin-sidebar.collapsed { width: var(--sidebar-w-collapsed); }
-
-.sidebar-toggle {
-    width: 100%; background: transparent; border: none; color: #cbd5e1;
-    font-size: 1.25rem; padding: 0.85rem 0; cursor: pointer; text-align: center;
-    border-bottom: 1px solid rgba(255,255,255,0.08); transition: background 0.2s, color 0.2s;
-    flex-shrink: 0;
-}
-.sidebar-toggle:hover { background: rgba(255,255,255,0.06); color: #fff; }
-
 .nav-item { position: relative; }
 .nav-icon { font-size: 1.15rem; flex-shrink: 0; width: 24px; text-align: center; }
+.admin-sidebar { transition: width 0.25s ease; }
 
-.admin-sidebar.collapsed .sidebar-brand { justify-content: center; padding: 1.25rem 0; }
-.admin-sidebar.collapsed .brand-text,
-.admin-sidebar.collapsed .nav-label,
-.admin-sidebar.collapsed .user-name,
-.admin-sidebar.collapsed .user-logout,
-.admin-sidebar.collapsed .dark-switch-label { display: none; }
-
-.admin-sidebar.collapsed .nav-item { justify-content: center; padding: 0.75rem 0; gap: 0; }
-.admin-sidebar.collapsed .sidebar-nav { padding: 1rem 0.5rem; }
-.admin-sidebar.collapsed .sidebar-footer { padding: 1rem 0.5rem; }
-.admin-sidebar.collapsed .user-info { justify-content: center; }
-.admin-sidebar.collapsed .dark-switch-wrap { justify-content: center; padding: 0.5rem 0; }
-
-/* Tooltip al pasar el cursor en estado colapsado */
-.admin-sidebar.collapsed .nav-item:hover::after {
-    content: attr(data-label);
-    position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%);
-    background: var(--navy-light); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px;
-    font-size: 0.8rem; white-space: nowrap; z-index: 1001;
-    box-shadow: 0 4px 14px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12);
+/* Móvil: solo iconos */
+@media (max-width: 768px) {
+    .admin-sidebar { width: 68px; }
+    .admin-sidebar .brand-text,
+    .admin-sidebar .nav-label,
+    .admin-sidebar .user-name,
+    .admin-sidebar .user-logout,
+    .admin-sidebar .dark-switch-label { display: none; }
+    .admin-sidebar .sidebar-brand { justify-content: center; padding: 1.25rem 0; }
+    .admin-sidebar .nav-item { justify-content: center; padding: 0.75rem 0; gap: 0; }
+    .admin-sidebar .sidebar-nav { padding: 1rem 0.5rem; }
+    .admin-sidebar .sidebar-footer { padding: 1rem 0.5rem; }
+    .admin-sidebar .user-info { justify-content: center; }
+    .admin-sidebar .dark-switch-wrap { justify-content: center; padding: 0.5rem 0; }
+    .admin-sidebar .nav-item:hover::after {
+        content: attr(data-label);
+        position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%);
+        background: var(--navy-light); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px;
+        font-size: 0.8rem; white-space: nowrap; z-index: 1001;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.12);
+    }
+    .admin-main { margin-left: 68px; }
 }
-
-.admin-main { transition: margin-left 0.25s ease; }
-.admin-sidebar.collapsed ~ .admin-main { margin-left: var(--sidebar-w-collapsed); }
 
 /* ============================================
    TARJETAS DE PROYECTOS (Dashboard)
@@ -340,15 +319,3 @@ body.dark .tbl th { background: #0f172a; }
 .uc-name { font-weight: 600; color: var(--text); line-height: 1.25; }
 .uc-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.2rem; }
 .uc-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: auto; padding-top: 0.5rem; }
-
-/* Sidebar colapsado no aplica en móvil */
-@media (max-width: 1024px) {
-    .admin-sidebar.collapsed { width: 100%; }
-    .admin-sidebar.collapsed .brand-text,
-    .admin-sidebar.collapsed .nav-label { display: block; }
-    .admin-sidebar.collapsed .nav-item { justify-content: flex-start; padding: 0.7rem 1rem; gap: 0.75rem; }
-    .admin-sidebar.collapsed .sidebar-nav { display: flex; overflow-x: auto; padding: 0.5rem; }
-    .admin-sidebar.collapsed ~ .admin-main { margin-left: 0; }
-    .sidebar-toggle { display: none; }
-    .pc-dates { grid-template-columns: repeat(3, 1fr); }
-}

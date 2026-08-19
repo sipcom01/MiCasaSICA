@@ -2,8 +2,7 @@
 if(!isset($activePage)) $activePage = '';
 $user = Auth::currentUser();
 ?>
-<aside class="admin-sidebar collapsed" id="adminSidebar">
-    <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Alternar menú" title="Mostrar/ocultar menú">☰</button>
+<aside class="admin-sidebar">
     <div class="sidebar-brand">
         <div class="brand-icon">
             <svg viewBox="0 0 36 44" xmlns="http://www.w3.org/2000/svg" width="30" height="37">
@@ -41,7 +40,3 @@ $user = Auth::currentUser();
 .dark-switch input:checked+.slider:before{transform:translateX(18px)}
 .dark-switch-label{font-size:.7rem;color:#94a3b8}
 body.dark,.dark body{background:#0f172a!important}body.dark .admin-layout,body.dark .admin-main,body.dark main{background:#0f172a!important}body.dark{--bg:#0f172a;--white:#1e293b;--text:#e2e8f0;--text-muted:#94a3b8;--border:#334155}body.dark .card,body.dark .stat-card,body.dark .pg,body.dark .ub,body.dark .modal-box,body.dark .modal-content{background:#1e293b!important;border-color:#334155!important}body.dark table{background:#1e293b!important;color:#e2e8f0!important}body.dark th,body.dark .tbl th{background:#0f172a!important}body.dark td,body.dark .tbl td{border-color:#334155!important}body.dark input,body.dark select,body.dark textarea{background:#0f172a!important;color:#e2e8f0!important;border-color:#475569!important}body.dark .btn-s{background:#334155!important;color:#cbd5e1!important}body.dark .gantt-wrap{background:#1e293b!important}body.dark .gantt-task-row,body.dark .gantt-grid-row{background:#1e293b!important;color:#e2e8f0!important}body.dark .gantt-hleft,body.dark .gantt-month{background:#0f172a!important}body.dark .msg.ok{background:#064e3b!important;color:#6ee7b7!important}</style>
-<script>
-function toggleSidebar(){var s=document.getElementById('adminSidebar');if(!s)return;s.classList.toggle('collapsed');localStorage.setItem('sica-sidebar',s.classList.contains('collapsed')?'1':'0')}
-(function(){var s=document.getElementById('adminSidebar');if(!s)return;if(localStorage.getItem('sica-sidebar')==='0'){s.classList.remove('collapsed')}})();
-</script>

@@ -129,7 +129,7 @@ $servicios = $servicios->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($proyecto['nombre']) ?> - Contenido | SICA Admin</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 36 44%27%3E%3Crect x=%271.5%27 y=%271.5%27 width=%2733%27 height=%2741%27 rx=%272%27 fill=%27none%27 stroke=%27%2350C8C6%27 stroke-width=%272.5%27/%3E%3Crect x=%278%27 y=%2724%27 width=%277%27 height=%2714%27 fill=%27%23FFFFFF%27/%3E%3Crect x=%2721%27 y=%2712%27 width=%277%27 height=%2726%27 fill=%27%23FFFFFF%27/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="assets/css/admin.css?v=5">
+    <link rel="stylesheet" href="assets/css/admin.css?v=6">
     <style>
         .tab-nav { display: flex; gap: 0.5rem; margin-bottom: 2rem; border-bottom: 2px solid #e2e8f0; }
         .tab-nav a { padding: 0.75rem 1.5rem; text-decoration: none; color: #64748b; font-weight: 600; border-bottom: 3px solid transparent; margin-bottom: -2px; }
