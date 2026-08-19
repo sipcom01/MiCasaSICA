@@ -149,12 +149,16 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 .dark .chat-messages{background:#0f172a}.dark .chat-msg.ai{background:#1e293b;color:#e2e8f0}
 .dark .chat-input-wrap{background:#1e293b;border-color:#334155}
 .dark .chat-input-wrap textarea{background:#0f172a;color:#e2e8f0;border-color:#475569}
-.dark h2{color:#e2e8f0}.dark .section-title{color:#64748b}.dark .modal-box{background:#1e293b}
+.dark h2{color:#e2e8f0}.dark .section-title{color:#64748b}.dark .modal-box{background:#1e293b}.dark .chat-header{border-color:#334155}.dark .chat-close{color:#94a3b8}
 .dark .modal-box h3{color:#e2e8f0}.dark .modal-box label{color:#94a3b8}
 .dark .modal-box input,.dark .modal-box select,.dark .modal-box textarea{background:#0f172a;color:#e2e8f0;border-color:#475569}
 .nav-item{position:relative}
 .nav-icon{font-size:1.15rem;flex-shrink:0;width:24px;text-align:center}
-@media(max-width:768px){.sidebar{width:68px}.sidebar .brand-text,.sidebar .nav-label,.sidebar .user-name,.sidebar .user-logout,.sidebar .dark-switch-label{display:none}.sidebar .sidebar-brand{justify-content:center;padding:1.25rem 0}.sidebar .nav-item{justify-content:center;padding:.75rem 0;gap:0}.sidebar .sidebar-nav{padding:1rem .5rem}.sidebar .user-info-wrap{justify-content:center;padding:1rem .5rem}.sidebar .dark-switch-wrap{justify-content:center;padding:.5rem 0}.sidebar .nav-item:hover::after{content:attr(data-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:#1b3050;color:#fff;padding:.4rem .8rem;border-radius:6px;font-size:.8rem;white-space:nowrap;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12)}.panel-tasks,.panel-chat{flex:1}.main{flex-direction:column}}
+.tasks-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+.assistant-btn{display:none}
+.chat-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e2e8f0}
+.chat-close{display:none;background:none;border:none;font-size:1.3rem;cursor:pointer;color:#64748b;padding:.5rem 1rem;line-height:1}
+@media(max-width:768px){.sidebar{width:68px}.sidebar .brand-text,.sidebar .nav-label,.sidebar .user-name,.sidebar .user-logout,.sidebar .dark-switch-label{display:none}.sidebar .sidebar-brand{justify-content:center;padding:1.25rem 0}.sidebar .nav-item{justify-content:center;padding:.75rem 0;gap:0}.sidebar .sidebar-nav{padding:1rem .5rem}.sidebar .user-info-wrap{justify-content:center;padding:1rem .5rem}.sidebar .dark-switch-wrap{justify-content:center;padding:.5rem 0}.sidebar .nav-item:hover::after{content:attr(data-label);position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:#1b3050;color:#fff;padding:.4rem .8rem;border-radius:6px;font-size:.8rem;white-space:nowrap;z-index:1001;box-shadow:0 4px 14px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.12)}.panel-tasks,.panel-chat{flex:1}.main{flex-direction:column}.assistant-btn{display:block}.chat-close{display:block}.panel-chat{display:none}.panel-chat.open{display:flex;position:fixed;top:0;left:0;right:0;bottom:0;z-index:900}}
 </style></head><body>
 <div class="layout">
 <aside class="sidebar">
@@ -170,7 +174,10 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 </aside>
 <div class="main">
 <div class="panel panel-tasks">
+<div class="tasks-header">
 <h2>✅ Mis Tareas</h2>
+<button class="btn btn-p assistant-btn" onclick="openAssistant()">🤖 Asistente SICA</button>
+</div>
 <?php if($msg):?><div class="msg"><?=htmlspecialchars($msg)?></div><?php endif?>
 <?php if(empty($tareas)&&empty($tareasCompletadas)):?><p style="color:#94a3b8;text-align:center;padding:2rem">No tienes tareas asignadas.</p><?php endif?>
 <?php foreach($tareas as $t):$hoy=date('Y-m-d');$atrasada=$t['fecha_fin']&&$t['fecha_fin']<$hoy;?>
@@ -214,8 +221,11 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 <?php if(!empty($tareasCompletadas)):?><div class="section-title">✅ Completadas</div>
 <?php foreach($tareasCompletadas as $t):?><div class="task-card done"><div class="tc-header"><div><div class="tc-name"><?=htmlspecialchars($t['procedimiento'])?></div><div class="tc-meta">📍 <?=htmlspecialchars($t['proyecto'])?> · Terminado: <?=$t['fecha_terminacion_real']?date('d/m/Y',strtotime($t['fecha_terminacion_real'])):'Sí'?></div></div><span class="tc-badge badge-ok">OK</span></div></div>
 <?php endforeach;endif?></div>
-<div class="panel panel-chat">
-<h2 style="padding:.5rem 1rem;border-bottom:1px solid #e2e8f0;margin:0">🤖 Asistente SICA</h2>
+<div class="panel panel-chat" id="chatPanel">
+<div class="chat-header">
+<h2 style="padding:.5rem 1rem;margin:0">🤖 Asistente SICA</h2>
+<button class="chat-close" onclick="closeAssistant()" aria-label="Cerrar">✕</button>
+</div>
 <div class="chat-messages" id="chatMessages"><div class="chat-msg ai">¡Hola! Soy el asistente IA de SICA. Puedo ayudarte con consultas legales, técnicas y financieras sobre desarrollo inmobiliario. ¿En qué te ayudo?</div></div>
 <div class="chat-typing" id="chatTyping">🤖 Pensando...</div>
 <div class="chat-input-wrap"><textarea id="chatInput" rows="2" placeholder="Escribe tu consulta..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage()}"></textarea><button class="btn btn-p" onclick="sendMessage()" style="align-self:flex-end">Enviar</button></div>
@@ -262,6 +272,9 @@ body.dark{background:#0f172a}.dark .panel-tasks{background:#0f172a}.dark .panel-
 <script>
 function toggleDark(){var b=document.body;var c=document.getElementById("darkSwitch");b.classList.toggle("dark",c.checked);localStorage.setItem("sica-dark",c.checked?"1":"0")}
 (function(){if(localStorage.getItem("sica-dark")==="1"){document.body.classList.add("dark");var c=document.getElementById("darkSwitch");if(c)c.checked=true}})();
+
+function openAssistant(){var p=document.getElementById('chatPanel');if(p)p.classList.add('open')}
+function closeAssistant(){var p=document.getElementById('chatPanel');if(p)p.classList.remove('open')}
 
 function openGanttModal(t){document.getElementById('ganttPid').value=t.id;document.getElementById('ganttFI').value=t.fecha_inicio||'';document.getElementById('ganttFF').value=t.fecha_fin||'';document.getElementById('ganttInfo').innerHTML='<strong>'+esc(t.procedimiento)+'</strong><br>📍 '+esc(t.proyecto)+'<br>📅 Actual: '+(t.fecha_inicio||'?')+' → '+(t.fecha_fin||'?');document.getElementById('ganttModal').classList.add('show')}
 function openPresupuestoModal(t){document.getElementById('presPid').value=t.id;document.getElementById('presMonto').value=t.presupuesto_tercero||0;document.getElementById('presNota').value=t.nota_presupuesto||'';document.getElementById('presInfo').innerHTML='<strong>'+esc(t.procedimiento)+'</strong><br>📍 '+esc(t.proyecto)+'<br>💰 Estimado: $'+(t.costo_estimado||0)+' | Tercero: $'+(t.presupuesto_tercero||0);document.getElementById('presupuestoModal').classList.add('show')}
