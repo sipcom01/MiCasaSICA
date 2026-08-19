@@ -53,6 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'form') {
         $error = 'La contraseña debe contener al menos un número.';
     } elseif (!preg_match('/[A-Z]/', $password)) {
         $error = 'La contraseña debe contener al menos una letra mayúscula.';
+    } elseif (!preg_match('/[^a-zA-Z0-9]/', $password)) {
+        $error = 'La contraseña debe contener al menos un carácter especial.';
     } elseif ($password !== $confirm) {
         $error = 'Las contraseñas no coinciden.';
     } else {
@@ -103,8 +105,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'form') {
         }
         .form-group input:focus { outline: none; border-color: var(--teal); }
 
-        .requirements { color: #94a3b8; font-size: 0.78rem; margin-bottom: 1.5rem; line-height: 1.6; }
-        .requirements li { margin-left: 1.2rem; }
+        .requirements { color: #94a3b8; font-size: 0.78rem; margin-bottom: 1.5rem; line-height: 1.6; list-style: none; }
+        .requirements li { margin: 0.3rem 0; transition: color 0.2s; }
+        .requirements li .check {
+            display: inline-block; width: 17px; height: 17px; line-height: 15px;
+            border-radius: 50%; border: 1.5px solid #475569; color: transparent;
+            text-align: center; font-size: 11px; font-weight: 700; margin-right: 0.5rem;
+            transition: all 0.2s; vertical-align: middle;
+        }
+        .requirements li.done { color: #cbd5e1; }
+        .requirements li.done .check { background: var(--teal); border-color: var(--teal); color: var(--navy); }
 
         .btn {
             width: 100%; padding: 0.85rem; background: var(--teal); color: var(--navy);
@@ -163,13 +173,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $step === 'form') {
                     <input type="password" id="confirm_password" name="confirm_password" placeholder="Repite tu contraseña" required>
                 </div>
                 <ul class="requirements">
-                    <li>Mínimo 8 caracteres</li>
-                    <li>Al menos 1 número</li>
-                    <li>Al menos 1 letra mayúscula</li>
+                    <li id="req-length"><span class="check">✓</span> Mínimo 8 caracteres</li>
+                    <li id="req-upper"><span class="check">✓</span> Al menos 1 letra mayúscula</li>
+                    <li id="req-number"><span class="check">✓</span> Al menos 1 número</li>
+                    <li id="req-special"><span class="check">✓</span> Al menos 1 carácter especial</li>
                 </ul>
                 <button type="submit" class="btn">Guardar Contraseña</button>
             </form>
         <?php endif; ?>
     </div>
+<script>
+function setReq(id, ok) {
+    var el = document.getElementById(id);
+    if (el) { el.classList.toggle('done', ok); }
+}
+function checkPassword() {
+    var p = document.getElementById('password').value;
+    setReq('req-length',  p.length >= 8);
+    setReq('req-upper',   /[A-Z]/.test(p));
+    setReq('req-number',  /[0-9]/.test(p));
+    setReq('req-special', /[^a-zA-Z0-9]/.test(p));
+}
+document.getElementById('password').addEventListener('input', checkPassword);
+</script>
 </body>
 </html>
