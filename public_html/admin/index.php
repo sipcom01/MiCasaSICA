@@ -70,7 +70,7 @@ function statusBadge($s) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | SICA Admin</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 36 44%27%3E%3Crect x=%271.5%27 y=%271.5%27 width=%2733%27 height=%2741%27 rx=%272%27 fill=%27none%27 stroke=%27%2350C8C6%27 stroke-width=%272.5%27/%3E%3Crect x=%278%27 y=%2724%27 width=%277%27 height=%2714%27 fill=%27%23FFFFFF%27/%3E%3Crect x=%2721%27 y=%2712%27 width=%277%27 height=%2726%27 fill=%27%23FFFFFF%27/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="assets/css/admin.css?v=4">
+    <link rel="stylesheet" href="assets/css/admin.css?v=5">
 </head>
 <body>
 <div class="admin-layout">
@@ -124,54 +124,40 @@ function statusBadge($s) {
             </div>
         </div>
 
-        <!-- Proyectos Table -->
+        <!-- Proyectos Tarjetas -->
         <div class="card" id="proyectos">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
                 <h3>Proyectos</h3>
                 <button class="btn btn-primary" onclick="openProjectModal()">+ Nuevo Proyecto</button>
             </div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Proyecto</th>
-                            <th>Ubicación</th>
-                            <th>Estado</th>
-                            <th>Inicio</th>
-                            <th>Fin Plan</th>
-                            <th>Fin Real</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($proyectos as $p): 
-                            $sb = statusBadge($p['status']);
-                        ?>
-                        <tr>
-                            <td><strong><?= htmlspecialchars($p['nombre']) ?></strong></td>
-                            <td><?= htmlspecialchars($p['ubicacion']) ?></td>
-                            <td><span class="badge" style="background:<?= $sb[1] ?>20;color:<?= $sb[1] ?>;border:1px solid <?= $sb[1] ?>40;"><?= $sb[0] ?></span></td>
-                            <td><?= $p['fecha_inicio'] ? date('d/m/Y', strtotime($p['fecha_inicio'])) : '-' ?></td>
-                            <td><?= $p['fecha_fin'] ? date('d/m/Y', strtotime($p['fecha_fin'])) : '-' ?></td>
-                            <td style="<?= $p['gantt_fin'] && $p['fecha_fin'] && $p['gantt_fin'] > $p['fecha_fin'] ? 'color:#ef4444;font-weight:700' : '' ?>">
-                                <?= $p['gantt_fin'] ? date('d/m/Y', strtotime($p['gantt_fin'])) : '—' ?>
-                            </td>
-                            <td>
-                                <div class="action-btns">
-                                                <a href="proyecto.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline">📊 Gantt</a>
-                                                <a href="presupuesto.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline">💰 Presupuesto</a>
-                                                <a href="contenido.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline">📝 Contenido</a>
-                                    <button class="btn btn-sm btn-outline" onclick="editProject(<?= $p['id'] ?>)">✏️</button>
-                                    <button class="btn btn-sm btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="deleteProject(<?= $p['id'] ?>)">🗑️</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <?php endforeach; ?>
-                        <?php if (empty($proyectos)): ?>
-                        <tr><td colspan="7" style="text-align:center;padding:3rem;color:#94a3b8;">No hay proyectos aún. Crea el primero.</td></tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+            <div class="project-grid">
+                <?php foreach ($proyectos as $p): 
+                    $sb = statusBadge($p['status']);
+                    $atrasado = $p['gantt_fin'] && $p['fecha_fin'] && $p['gantt_fin'] > $p['fecha_fin'];
+                ?>
+                <div class="project-card">
+                    <div class="pc-head">
+                        <div class="pc-name"><?= htmlspecialchars($p['nombre']) ?></div>
+                        <span class="badge" style="background:<?= $sb[1] ?>20;color:<?= $sb[1] ?>;border:1px solid <?= $sb[1] ?>40;white-space:nowrap;"><?= $sb[0] ?></span>
+                    </div>
+                    <div class="pc-loc">📍 <?= htmlspecialchars($p['ubicacion']) ?></div>
+                    <div class="pc-dates">
+                        <div class="pc-date"><label>Inicio</label><span><?= $p['fecha_inicio'] ? date('d/m/Y', strtotime($p['fecha_inicio'])) : '—' ?></span></div>
+                        <div class="pc-date"><label>Fin Plan</label><span><?= $p['fecha_fin'] ? date('d/m/Y', strtotime($p['fecha_fin'])) : '—' ?></span></div>
+                        <div class="pc-date<?= $atrasado ? ' overdue' : '' ?>"><label>Fin Real</label><span><?= $p['gantt_fin'] ? date('d/m/Y', strtotime($p['gantt_fin'])) : '—' ?></span></div>
+                    </div>
+                    <div class="pc-actions">
+                        <a href="proyecto.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline">📊 Gantt</a>
+                        <a href="presupuesto.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline">💰 Presupuesto</a>
+                        <a href="contenido.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline">📝 Contenido</a>
+                        <button class="btn btn-sm btn-outline" onclick="editProject(<?= $p['id'] ?>)">✏️</button>
+                        <button class="btn btn-sm btn-outline" style="color:#ef4444;border-color:#ef4444;" onclick="deleteProject(<?= $p['id'] ?>)">🗑️</button>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+                <?php if (empty($proyectos)): ?>
+                <div style="grid-column:1/-1;text-align:center;padding:3rem;color:#94a3b8;">No hay proyectos aún. Crea el primero.</div>
+                <?php endif; ?>
             </div>
         </div>
     </main>
