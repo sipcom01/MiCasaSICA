@@ -111,7 +111,7 @@ $roles = ['director'=>'Director General','lider'=>'Líder de Proyecto','gestor'=
 ?>
 <!DOCTYPE html><html lang="es-MX"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Usuarios | SICA</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 44'%3E%3Crect x='1.5' y='1.5' width='33' height='41' rx='2' fill='none' stroke='%2350C8C6' stroke-width='2.5'/%3E%3Crect x='8' y='24' width='7' height='14' fill='%23FFFFFF'/%3E%3Crect x='21' y='12' width='7' height='26' fill='%23FFFFFF'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="assets/css/admin.css?v=6"><style>
+<link rel="stylesheet" href="assets/css/admin.css?v=7"><style>
 .pg{background:#fff;border-radius:12px;padding:1.5rem;box-shadow:0 1px 4px rgba(0,0,0,0.06);margin-bottom:1.5rem}
 .pg h3{font-size:1rem;margin-bottom:1rem;color:#132236}
 .fg{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;margin-bottom:1rem}
