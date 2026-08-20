@@ -22,8 +22,8 @@ Auth::requireLogin();
 $user = Auth::currentUser();
 $db = Database::getInstance()->getPdo();
 
-// Solo admin y director pueden gestionar usuarios
-if(!in_array($user['rol'],['admin','director'])){header('Location: index.php');exit;}
+// Solo admin, director y finanzas pueden gestionar usuarios
+if(!in_array($user['rol'],['admin','director','finanzas'])){header('Location: index.php');exit;}
 
 // Inicializar mensaje de feedback
 $feedback = '';

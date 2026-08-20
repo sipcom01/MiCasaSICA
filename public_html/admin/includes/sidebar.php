@@ -16,7 +16,9 @@ $user = Auth::currentUser();
         <a href="index.php" class="nav-item<?=$activePage==='index'?' active':''?>" data-label="Proyectos"><span class="nav-icon">📊</span><span class="nav-label">Proyectos</span></a>
         <?php if(isset($extraNav)) echo $extraNav."\n"; ?>
         <a href="mis-tareas.php" class="nav-item<?=$activePage==='tareas'?' active':''?>" data-label="Mis Tareas"><span class="nav-icon">✅</span><span class="nav-label">Mis Tareas</span></a>
+        <?php if(in_array($user['rol'], ['admin','director','finanzas'])): ?>
         <a href="usuarios.php" class="nav-item<?=$activePage==='usuarios'?' active':''?>" data-label="Usuarios"><span class="nav-icon">👥</span><span class="nav-label">Usuarios</span></a>
+        <?php endif; ?>
         <a href="logout.php" class="nav-item" data-label="Salir"><span class="nav-icon">🚪</span><span class="nav-label">Salir</span></a>
     </nav>
     <div class="sidebar-footer">

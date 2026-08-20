@@ -7,7 +7,9 @@
     <nav class="sidebar-nav">
         <a href="index.php" class="nav-item" data-label="Proyectos"><span class="nav-icon">📊</span><span class="nav-label">Proyectos</span></a>
         <a href="mis-tareas.php" class="nav-item active" data-label="Mis Tareas"><span class="nav-icon">✅</span><span class="nav-label">Mis Tareas</span></a>
+        <?php if(in_array($user['rol'], ['admin','director','finanzas'])): ?>
         <a href="usuarios.php" class="nav-item" data-label="Usuarios"><span class="nav-icon">👥</span><span class="nav-label">Usuarios</span></a>
+        <?php endif; ?>
         <a href="logout.php" class="nav-item" data-label="Salir"><span class="nav-icon">🚪</span><span class="nav-label">Salir</span></a>
     </nav>
     <div class="user-info" style="padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,0.1);margin-top:auto">
